@@ -1,0 +1,21 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Secrets
+.env
+
+# Local data: SQLite DB, model artefact, downloaded datasets
+backend/data/
+
+# Node
+node_modules/
+frontend/dist/
+coverage/
+
+# OS / editors
+.DS_Store
+.vscode/
