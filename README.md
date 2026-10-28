@@ -38,17 +38,18 @@ npm install
 
 ## Configure
 
-Copy `.env.example` to `.env` in the repository root and set at least the admin password:
+Settings are read from `.env` in the repository root. The repository already contains the team's `.env`,
+including the admin login, so nothing needs to be set up after cloning. To use a different admin password,
+change it in `.env` and restart the backend:
 
 ```bash
-cp .env.example .env
-# then edit .env:
+# in .env
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=choose-a-strong-password
 ```
 
-The password is hashed when the server starts and the plaintext is discarded; it is never stored or
-logged. Leave it empty to disable admin login. Every setting is documented in `.env.example`.
+The server hashes the password at startup and keeps only the hash; it never logs it. Leave it empty to
+disable admin login. Every setting is explained in `.env.example`.
 
 ## Load the data (first time only)
 
