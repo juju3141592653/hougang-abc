@@ -137,3 +137,9 @@ def test_concurrent_retrains_and_predictions_do_not_fail(services, config, typic
                for p in predictions)
     assert json.loads(Path(config["MODEL_ARTEFACT_PATH"]).read_text())["version"] == 1
     assert not list(Path(config["MODEL_ARTEFACT_PATH"]).parent.glob("*.tmp"))
+
+
+def test_uc45_prediction_carries_a_typical_error(manager, typical, services):
+    result = manager.predict(typical)
+    assert result.typical_error_sgd == pytest.approx(
+        services["model"].typical_error(result.estimated_price_sgd), abs=0.01)

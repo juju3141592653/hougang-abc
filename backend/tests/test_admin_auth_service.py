@@ -89,3 +89,26 @@ def test_nfr531_password_is_only_kept_as_a_hash(services, config):
     auth = services["auth_service"]
     assert auth._password_hash and config["ADMIN_PASSWORD"] not in auth._password_hash
     assert auth._password_hash.startswith(("scrypt:", "pbkdf2:"))
+
+
+def test_uc411_account_locks_after_repeated_failures(auth, clock):
+    """UC-4.11 step 6: the account must not be locked."""
+    for _ in range(5):
+        with pytest.raises(AuthError, match="Invalid username or password"):
+            auth.login("admin", "wrong")
+    with pytest.raises(AuthError) as caught:
+        auth.login("admin", "s3cret-pass")  # even the right password is refused while locked
+    assert caught.value.details["reason"] == "locked"
+    clock.advance(6)
+    assert auth.login("admin", "s3cret-pass")
+
+
+def test_uc411_successful_login_resets_the_failure_count(auth):
+    for _ in range(4):
+        with pytest.raises(AuthError):
+            auth.login("admin", "wrong")
+    auth.login("admin", "s3cret-pass")
+    for _ in range(4):
+        with pytest.raises(AuthError, match="Invalid"):
+            auth.login("admin", "wrong")
+    assert auth.login("admin", "s3cret-pass")

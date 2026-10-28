@@ -26,7 +26,8 @@ def test_uc45_predict_returns_price_and_breakdown(client, body):
     assert response.status_code == 200
     result = response.get_json()
     assert set(result) == {"estimated_price_sgd", "base_price_sgd", "reliability_warning", "breakdown_available",
-                           "breakdown"}
+                           "breakdown", "typical_error_sgd"}
+    assert 0 < result["typical_error_sgd"] < result["estimated_price_sgd"]
     assert result["breakdown"][0] == {"feature_name": "Town", "input_value": body["town"],
                                       "contribution_sgd": result["breakdown"][0]["contribution_sgd"]}
 

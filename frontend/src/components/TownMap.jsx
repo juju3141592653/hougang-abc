@@ -34,13 +34,17 @@ export const TOWN_CENTRES = {
 export default function TownMap({ town }) {
   const centre = TOWN_CENTRES[town];
   if (!centre) {
-    return <p className="muted">A map is not available for {titleCase(town)}.</p>;
+    return (
+      <div className="card card-body">
+        <p className="muted">A map is not available for {titleCase(town)}.</p>
+      </div>
+    );
   }
   const [lat, lon] = centre;
   const bbox = [lon - 0.025, lat - 0.015, lon + 0.025, lat + 0.015].map((n) => n.toFixed(4)).join(",");
   const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
   return (
-    <figure className="town-map">
+    <figure className="card town-map">
       <iframe title={`Map of ${titleCase(town)}`} src={src} loading="lazy" />
       <figcaption>
         Approximate centre of {titleCase(town)} ·{" "}

@@ -54,8 +54,10 @@ def test_uc411_expired_session_returns_401_expired(client, services):
 
 def test_uc48_diagnostics(client):
     body = client.get("/api/admin/diagnostics", headers=login(client)).get_json()
-    assert set(body) == {"r_squared", "adjusted_r_squared", "rmse_sgd", "coefficients", "p_values"}
-    assert 0 < body["r_squared"] < 1
+    assert set(body) == {"r_squared", "adjusted_r_squared", "rmse_sgd", "coefficients", "p_values",
+                         "n_observations", "training_from", "training_to", "fitted_at"}
+    assert 0 < body["r_squared"] < 1 and body["n_observations"] > 0
+    assert body["training_from"] <= body["training_to"]
 
 
 def test_uc48_ex1_diagnostics_without_a_model(tmp_path):
@@ -114,3 +116,17 @@ def test_uc410_manual_update_uses_the_same_path(client, services, monkeypatch):
     monkeypatch.setattr(services["client"], "fetch_records", lambda: [])
     body = client.post("/api/admin/update-from-api", headers=login(client)).get_json()
     assert body["status"] == "success" and body["rows_added"] == 0 and body["model_retrained"] is False
+
+
+def test_uc49_check_route_validates_only(tmp_path):
+    client = AppBootstrap(make_config(tmp_path)).create_app().test_client()
+    headers = login(client)
+    good = {"file": (io.BytesIO(rows_to_csv(fixture_rows()[:10])), "resale.csv")}
+    body = client.post("/api/admin/dataset/check", headers=headers, data=good, content_type="multipart/form-data")
+    assert body.status_code == 200 and body.get_json()["rows_received"] == 10
+    assert client.get("/api/admin/status", headers=headers).get_json()["total_rows"] == 0
+    bad_rows = [{k: v for k, v in r.items() if k != "town"} for r in fixture_rows()[:3]]
+    bad = {"file": (io.BytesIO(rows_to_csv(bad_rows)), "bad.csv")}
+    rejected = client.post("/api/admin/dataset/check", headers=headers, data=bad, content_type="multipart/form-data")
+    assert rejected.status_code == 400 and rejected.get_json()["error"]["details"]["missing_columns"] == ["town"]
+    assert client.post("/api/admin/dataset/check").status_code == 401

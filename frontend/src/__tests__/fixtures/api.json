@@ -146,6 +146,60 @@
   "floor_area_max": 166.0,
   "floor_area_tolerance_sqm": 5.0
  },
+ "filterOptionsTownType": {
+  "towns": [
+   "ANG MO KIO",
+   "BEDOK",
+   "BISHAN",
+   "BUKIT BATOK",
+   "BUKIT MERAH",
+   "BUKIT PANJANG",
+   "BUKIT TIMAH",
+   "CENTRAL AREA",
+   "CHOA CHU KANG",
+   "CLEMENTI",
+   "GEYLANG",
+   "HOUGANG",
+   "JURONG EAST",
+   "JURONG WEST",
+   "KALLANG/WHAMPOA",
+   "MARINE PARADE",
+   "PASIR RIS",
+   "PUNGGOL",
+   "QUEENSTOWN",
+   "SEMBAWANG",
+   "SENGKANG",
+   "SERANGOON",
+   "TAMPINES",
+   "TOA PAYOH",
+   "WOODLANDS",
+   "YISHUN"
+  ],
+  "flat_types": [
+   "2 ROOM",
+   "3 ROOM",
+   "4 ROOM",
+   "5 ROOM",
+   "EXECUTIVE",
+   "MULTI-GENERATION"
+  ],
+  "storey_ranges": [
+   "01 TO 03",
+   "04 TO 06",
+   "07 TO 09",
+   "10 TO 12",
+   "13 TO 15"
+  ],
+  "flat_models": [
+   "DBSS",
+   "Model A",
+   "New Generation",
+   "Simplified"
+  ],
+  "floor_area_min": 83.0,
+  "floor_area_max": 116.0,
+  "floor_area_tolerance_sqm": 5.0
+ },
  "latest": {
   "records": [
    {
@@ -427,15 +481,7 @@
     "resale_price_sgd": 653000.0,
     "block": "123",
     "street_name": "SIMEI ST 1"
-   }
-  ],
-  "page": 1,
-  "page_size": 20,
-  "total": 58,
-  "total_pages": 3
- },
- "latestPage2": {
-  "records": [
+   },
    {
     "id": 4434,
     "transaction_month": "2026-07",
@@ -491,7 +537,15 @@
     "resale_price_sgd": 760000.0,
     "block": "618A",
     "street_name": "TAMPINES ST 61"
-   },
+   }
+  ],
+  "page": 1,
+  "page_size": 24,
+  "total": 58,
+  "total_pages": 3
+ },
+ "latestPage2": {
+  "records": [
    {
     "id": 4326,
     "transaction_month": "2026-06",
@@ -715,17 +769,129 @@
     "resale_price_sgd": 790000.0,
     "block": "608C",
     "street_name": "TAMPINES NTH DR 1"
+   },
+   {
+    "id": 3860,
+    "transaction_month": "2026-04",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "04 TO 06",
+    "flat_model": "Simplified",
+    "floor_area_sqm": 89.0,
+    "lease_commence_date": 1987,
+    "remaining_lease_years": 60.5,
+    "resale_price_sgd": 560000.0,
+    "block": "433",
+    "street_name": "TAMPINES ST 43"
+   },
+   {
+    "id": 3824,
+    "transaction_month": "2026-03",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "01 TO 03",
+    "flat_model": "Model A",
+    "floor_area_sqm": 104.0,
+    "lease_commence_date": 1985,
+    "remaining_lease_years": 58.3333,
+    "resale_price_sgd": 605000.0,
+    "block": "421",
+    "street_name": "TAMPINES ST 41"
+   },
+   {
+    "id": 3701,
+    "transaction_month": "2026-03",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "13 TO 15",
+    "flat_model": "Model A",
+    "floor_area_sqm": 93.0,
+    "lease_commence_date": 2015,
+    "remaining_lease_years": 88.5,
+    "resale_price_sgd": 808000.0,
+    "block": "522B",
+    "street_name": "TAMPINES CTRL 7"
+   },
+   {
+    "id": 3609,
+    "transaction_month": "2026-02",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "04 TO 06",
+    "flat_model": "Model A",
+    "floor_area_sqm": 106.0,
+    "lease_commence_date": 1996,
+    "remaining_lease_years": 69.75,
+    "resale_price_sgd": 685000.0,
+    "block": "450A",
+    "street_name": "TAMPINES ST 42"
+   },
+   {
+    "id": 3566,
+    "transaction_month": "2026-02",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "07 TO 09",
+    "flat_model": "Model A",
+    "floor_area_sqm": 104.0,
+    "lease_commence_date": 1988,
+    "remaining_lease_years": 61.5,
+    "resale_price_sgd": 675000.0,
+    "block": "859",
+    "street_name": "TAMPINES AVE 5"
+   },
+   {
+    "id": 3544,
+    "transaction_month": "2026-02",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "04 TO 06",
+    "flat_model": "Model A",
+    "floor_area_sqm": 103.0,
+    "lease_commence_date": 1984,
+    "remaining_lease_years": 57.5,
+    "resale_price_sgd": 625000.0,
+    "block": "106",
+    "street_name": "TAMPINES ST 11"
+   },
+   {
+    "id": 3518,
+    "transaction_month": "2026-01",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "07 TO 09",
+    "flat_model": "Model A",
+    "floor_area_sqm": 93.0,
+    "lease_commence_date": 2021,
+    "remaining_lease_years": 94.0833,
+    "resale_price_sgd": 760000.0,
+    "block": "614A",
+    "street_name": "TAMPINES NTH DR 1"
+   },
+   {
+    "id": 3485,
+    "transaction_month": "2026-01",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "04 TO 06",
+    "flat_model": "Model A",
+    "floor_area_sqm": 103.0,
+    "lease_commence_date": 1984,
+    "remaining_lease_years": 57.75,
+    "resale_price_sgd": 620000.0,
+    "block": "141",
+    "street_name": "TAMPINES ST 12"
    }
   ],
   "page": 2,
-  "page_size": 20,
+  "page_size": 24,
   "total": 58,
   "total_pages": 3
  },
  "latestEmpty": {
   "records": [],
   "page": 1,
-  "page_size": 20,
+  "page_size": 24,
   "total": 0,
   "total_pages": 1
  },
@@ -1034,12 +1200,68 @@
     "resale_price_sgd": 653000.0,
     "block": "123",
     "street_name": "SIMEI ST 1"
+   },
+   {
+    "id": 4434,
+    "transaction_month": "2026-07",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "01 TO 03",
+    "flat_model": "Model A",
+    "floor_area_sqm": 93.0,
+    "lease_commence_date": 2015,
+    "remaining_lease_years": 88.25,
+    "resale_price_sgd": 785000.0,
+    "block": "890A",
+    "street_name": "TAMPINES AVE 1"
+   },
+   {
+    "id": 4418,
+    "transaction_month": "2026-07",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "07 TO 09",
+    "flat_model": "Model A",
+    "floor_area_sqm": 92.0,
+    "lease_commence_date": 2020,
+    "remaining_lease_years": 92.6667,
+    "resale_price_sgd": 785000.0,
+    "block": "604A",
+    "street_name": "TAMPINES AVE 9"
+   },
+   {
+    "id": 4417,
+    "transaction_month": "2026-07",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "04 TO 06",
+    "flat_model": "Model A",
+    "floor_area_sqm": 93.0,
+    "lease_commence_date": 2020,
+    "remaining_lease_years": 93.25,
+    "resale_price_sgd": 762000.0,
+    "block": "612A",
+    "street_name": "TAMPINES NTH DR 1"
+   },
+   {
+    "id": 4396,
+    "transaction_month": "2026-07",
+    "town": "TAMPINES",
+    "flat_type": "4 ROOM",
+    "storey_range": "04 TO 06",
+    "flat_model": "Model A",
+    "floor_area_sqm": 93.0,
+    "lease_commence_date": 2021,
+    "remaining_lease_years": 94.3333,
+    "resale_price_sgd": 760000.0,
+    "block": "618A",
+    "street_name": "TAMPINES ST 61"
    }
   ],
   "page": 1,
-  "page_size": 20,
+  "page_size": 24,
   "total": 160,
-  "total_pages": 8
+  "total_pages": 7
  },
  "summaryAll": {
   "count": 160,
@@ -1094,7 +1316,58 @@
    "2026-07": 706500.0,
    "2026-08": 733000.0,
    "2026-09": 680000.0
-  }
+  },
+  "volume": {
+   "2017-11": 3,
+   "2018-05": 1,
+   "2018-11": 1,
+   "2019-06": 1,
+   "2019-12": 1,
+   "2020-04": 1,
+   "2020-07": 1,
+   "2020-08": 1,
+   "2020-10": 1,
+   "2020-12": 1,
+   "2021-01": 1,
+   "2021-02": 1,
+   "2021-07": 1,
+   "2021-08": 1,
+   "2021-09": 1,
+   "2022-02": 1,
+   "2022-10": 1,
+   "2023-02": 1,
+   "2023-05": 2,
+   "2023-06": 1,
+   "2023-10": 1,
+   "2024-01": 1,
+   "2024-04": 2,
+   "2024-05": 1,
+   "2024-10": 1,
+   "2024-11": 2,
+   "2024-12": 6,
+   "2025-01": 1,
+   "2025-02": 11,
+   "2025-03": 9,
+   "2025-04": 7,
+   "2025-05": 5,
+   "2025-06": 3,
+   "2025-07": 5,
+   "2025-08": 10,
+   "2025-09": 8,
+   "2025-10": 6,
+   "2025-11": 4,
+   "2025-12": 4,
+   "2026-01": 4,
+   "2026-02": 3,
+   "2026-03": 2,
+   "2026-04": 4,
+   "2026-05": 8,
+   "2026-06": 5,
+   "2026-07": 8,
+   "2026-08": 5,
+   "2026-09": 11
+  },
+  "median_psm_sgd": 6518.25
  },
  "summary1y": {
   "count": 58,
@@ -1112,18 +1385,35 @@
    "2026-07": 706500.0,
    "2026-08": 733000.0,
    "2026-09": 680000.0
-  }
+  },
+  "volume": {
+   "2025-11": 4,
+   "2025-12": 4,
+   "2026-01": 4,
+   "2026-02": 3,
+   "2026-03": 2,
+   "2026-04": 4,
+   "2026-05": 8,
+   "2026-06": 5,
+   "2026-07": 8,
+   "2026-08": 5,
+   "2026-09": 11
+  },
+  "median_psm_sgd": 6607.14
  },
  "summaryEmpty": {
   "count": 0,
   "mean_sgd": 0.0,
   "median_sgd": 0.0,
-  "trend": {}
+  "trend": {},
+  "volume": {},
+  "median_psm_sgd": 0.0
  },
  "lastUpdated": {
+  "total_rows": 5013,
   "first_month": "2017-01",
   "latest_month": "2026-10",
-  "last_successful_update": "2026-10-17T13:59:32+00:00"
+  "last_successful_update": "2026-10-28T11:44:40+00:00"
  },
  "predictionInput": {
   "town": "TAMPINES",
@@ -1169,7 +1459,8 @@
     "input_value": "1987",
     "contribution_sgd": -74618.47
    }
-  ]
+  ],
+  "typical_error_sgd": 61120.41
  },
  "predictionUnseen": {
   "estimated_price_sgd": 698512.42,
@@ -1207,7 +1498,8 @@
     "input_value": "1987",
     "contribution_sgd": -74618.47
    }
-  ]
+  ],
+  "typical_error_sgd": 71983.94
  },
  "predictionInsufficient": {
   "error": {
@@ -1246,7 +1538,7 @@
   "total_rows": 5013,
   "first_month": "2017-01",
   "latest_month": "2026-10",
-  "last_successful_update": "2026-10-17T13:59:32+00:00",
+  "last_successful_update": "2026-10-28T11:44:40+00:00",
   "recent_updates": [
    {
     "source": "upload",
@@ -1271,8 +1563,8 @@
     "ignored_columns": [],
     "first_month": "2017-01",
     "latest_month": "2026-10",
-    "finished_at": "2026-10-17T13:59:32+00:00",
-    "recorded_at": "2026-10-17T13:59:32+00:00"
+    "finished_at": "2026-10-28T11:44:40+00:00",
+    "recorded_at": "2026-10-28T11:44:40+00:00"
    }
   ],
   "needs_attention": [],
@@ -1417,7 +1709,32 @@
    "Flat model: Type S2 (vs Model A)": 2.4602366795896545e-11,
    "Floor area (per sqm)": 2.7844641252284056e-113,
    "Lease commencement year (per year)": 0.0
-  }
+  },
+  "n_observations": 4013,
+  "training_from": "2024-11",
+  "training_to": "2026-10",
+  "fitted_at": "2026-10-28T11:44:40+00:00"
+ },
+ "datasetCheck": {
+  "status": "valid",
+  "filename": "sample_resale.csv",
+  "rows_received": 5013,
+  "accepted_columns": [
+   "month",
+   "town",
+   "flat_type",
+   "block",
+   "street_name",
+   "storey_range",
+   "floor_area_sqm",
+   "flat_model",
+   "lease_commence_date",
+   "remaining_lease",
+   "resale_price"
+  ],
+  "ignored_columns": [],
+  "first_month": "2017-01",
+  "latest_month": "2026-10"
  },
  "uploadRejected": {
   "error": {
@@ -1469,7 +1786,7 @@
   "ignored_columns": [],
   "first_month": "2017-01",
   "latest_month": "2026-10",
-  "finished_at": "2026-10-17T13:59:32+00:00",
+  "finished_at": "2026-10-28T11:44:40+00:00",
   "model_retrained": false
  }
 }

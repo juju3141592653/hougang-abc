@@ -98,6 +98,7 @@ class PredictionManager:
                     "estimate. Please check the floor area and lease commencement year."
                 )
             warning = None if self._model.is_represented(inputs) else RELIABILITY_WARNING
+            typical_error = round(self._model.typical_error(estimate), 2)
             estimate = round(estimate, 2)
             try:
                 breakdown = self._model.explain(inputs)
@@ -105,7 +106,7 @@ class PredictionManager:
                 logger.exception("Prediction breakdown failed")
                 # With no contributions to show, the base equals the estimate (base + nothing = estimate).
                 return Prediction(estimated_price_sgd=estimate, base_price_sgd=estimate, reliability_warning=warning,
-                                  breakdown_available=False, breakdown=[])
+                                  breakdown_available=False, breakdown=[], typical_error_sgd=typical_error)
         breakdown = [
             PredictionBreakdown(item.feature_name, item.input_value, round(item.contribution_sgd, 2))
             for item in breakdown
@@ -113,7 +114,7 @@ class PredictionManager:
         # Base is derived so that base + contributions equals the estimate exactly after rounding.
         base = round(estimate - sum(item.contribution_sgd for item in breakdown), 2)
         return Prediction(estimated_price_sgd=estimate, base_price_sgd=base, reliability_warning=warning,
-                          breakdown_available=True, breakdown=breakdown)
+                          breakdown_available=True, breakdown=breakdown, typical_error_sgd=typical_error)
 
     def get_diagnostics(self) -> ModelDiagnostics:
         """Goodness of fit, coefficients and significance (UC-4.8). Raises ModelUnavailableError (EX.1)."""

@@ -2,23 +2,55 @@
 // UC-4.2 AC.1 (full details of the selected transaction) and the entry point to UC-4.3, UC-4.4 and
 // UC-4.5. Methods mirror the class diagram: load_record(id), open_history(), open_summary(),
 // open_prediction(). Attributes: selected_record (Transaction), criteria (FilterCriteria).
+// S3, S4 and S5 opened from here come "Back to property details" (decisions #28).
+import {
+  BarChart3,
+  Building2,
+  Calculator,
+  CalendarDays,
+  ChevronRight,
+  Hourglass,
+  KeyRound,
+  Layers,
+  MapPin,
+  Ruler,
+  Shapes,
+  SearchX,
+  Tag,
+  History,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
-import Message from "../components/Message.jsx";
-import { describeCriteria, formatArea, formatLease, formatMonth, formatSGD, titleCase } from "../components/format.js";
+import {
+  describeCriteria,
+  flatTypeLabel,
+  formatArea,
+  formatLease,
+  formatMonth,
+  formatSGD,
+  titleCase,
+} from "../components/format.js";
+import { originState } from "../components/navigation.js";
+import { BackLink, Badge, Breadcrumbs, Card, EmptyState, Skeleton } from "../components/ui.jsx";
+import useDocumentTitle from "../components/useDocumentTitle.js";
 import { useFilters } from "../state/FilterContext.jsx";
 
 export default function PropertyDetailsPageUI() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { criteria, setCriteria, setSelectedRecord } = useFilters();
+  const location = useLocation();
+  const { criteria, setCriteria } = useFilters();
   const [selected_record, setRecord] = useState(null);
   const [error, setError] = useState(null);
+  useDocumentTitle(
+    selected_record ? `Blk ${selected_record.block} ${titleCase(selected_record.street_name)}` : "Property details",
+  );
 
   /** load_record(id): fetch the transaction (UC-4.2 AC.1). */
   const load_record = useCallback(async (recordId) => {
     setError(null);
+    setRecord(null);
     try {
       setRecord(await api.transaction(recordId));
     } catch (err) {
@@ -30,125 +62,176 @@ export default function PropertyDetailsPageUI() {
     load_record(id);
   }, [id, load_record]);
 
-  // "Keep selected housing criteria": if the page was opened directly, fall back to the record's town.
+  // "Keep selected housing criteria": if the page was opened directly, use the record's town and type.
+  const searchCriteria = criteria.town
+    ? criteria
+    : selected_record
+      ? { town: selected_record.town, flat_type: selected_record.flat_type }
+      : criteria;
   const ensureCriteria = () => {
-    if (!criteria.town && selected_record) {
-      setCriteria({ town: selected_record.town, flat_type: selected_record.flat_type });
-    }
+    if (!criteria.town && selected_record) setCriteria(searchCriteria);
   };
 
   /** open_history(): S3 Historical Data Page (UC-4.3). */
   const open_history = () => {
     ensureCriteria();
-    navigate("/history");
+    navigate("/history", { state: originState(location) });
   };
 
   /** open_summary(): S4 Summary Statistics Page (UC-4.4). */
   const open_summary = () => {
     ensureCriteria();
-    navigate("/summary");
+    navigate("/summary", { state: originState(location) });
   };
 
   /** open_prediction(): S5 Prediction Input Page, pre-filled from this property (UC-4.5 step 2). */
   const open_prediction = () => {
     ensureCriteria();
-    setSelectedRecord(selected_record);
-    navigate("/predict");
+    navigate("/predict", { state: originState(location, { record: selected_record }) });
   };
 
+  const crumbs = [
+    { label: "Search", to: "/" },
+    { label: "Latest results", to: "/results" },
+    { label: selected_record ? `Blk ${selected_record.block} ${titleCase(selected_record.street_name)}` : "Details" },
+  ];
+
+  if (error) {
+    return (
+      <div className="container page">
+        <BackLink to="/results" label="Back to results" />
+        <div className="card">
+          <EmptyState
+            icon={SearchX}
+            title="Couldn't load this transaction"
+            actions={
+              <Link className="btn btn-primary" to="/results">
+                Back to results
+              </Link>
+            }
+          >
+            {error.message}
+          </EmptyState>
+        </div>
+      </div>
+    );
+  }
+
+  const r = selected_record;
+  const facts = r
+    ? [
+        { icon: CalendarDays, label: "Month registered", value: formatMonth(r.transaction_month) },
+        { icon: MapPin, label: "Town", value: titleCase(r.town) },
+        { icon: Building2, label: "Flat type", value: flatTypeLabel(r.flat_type) },
+        { icon: Shapes, label: "Flat model", value: r.flat_model },
+        { icon: Layers, label: "Storey range", value: r.storey_range.toLowerCase() },
+        { icon: Ruler, label: "Floor area", value: formatArea(r.floor_area_sqm) },
+        { icon: KeyRound, label: "Lease commenced", value: String(r.lease_commence_date) },
+        { icon: Hourglass, label: "Remaining lease at sale", value: formatLease(r.remaining_lease_years) },
+      ]
+    : [];
+
   return (
-    <div className="page">
-      <Link className="back-link" to="/results">
-        ← Back to results
-      </Link>
+    <div className="container page">
+      <div>
+        <Breadcrumbs items={crumbs} />
+        <BackLink to="/results" label="Back to results" />
+      </div>
 
-      {error && (
-        <Message kind="error" title="Couldn't load this transaction">
-          {error.message}
-        </Message>
-      )}
-      {!selected_record && !error && <p className="muted">Loading…</p>}
-
-      {selected_record && (
-        <>
-          <header className="page-header">
-            <div>
-              <p className="eyebrow">Resale transaction · {formatMonth(selected_record.transaction_month)}</p>
+      <div className="card detail-hero">
+        {r ? (
+          <>
+            <div className="page-header-text">
+              <p className="eyebrow">Resale transaction</p>
               <h1>
-                Blk {selected_record.block} {titleCase(selected_record.street_name)}
+                Blk {r.block} {titleCase(r.street_name)}
               </h1>
-              <p className="muted">
-                {titleCase(selected_record.flat_type)} in {titleCase(selected_record.town)}
-              </p>
+              <div className="chip-row">
+                <Badge tone="primary" icon={Building2}>
+                  {flatTypeLabel(r.flat_type)}
+                </Badge>
+                <Badge icon={MapPin}>{titleCase(r.town)}</Badge>
+                <Badge icon={CalendarDays}>Registered {formatMonth(r.transaction_month)}</Badge>
+              </div>
             </div>
-            <div className="price-block">
-              <span className="price price-large">{formatSGD(selected_record.resale_price_sgd)}</span>
-              <span className="muted">Resale price (actual sale)</span>
+            <div className="detail-price">
+              <span className="subtle">Resale price (actual sale)</span>
+              <span className="detail-price-value">{formatSGD(r.resale_price_sgd)}</span>
+              <span className="subtle">
+                <Tag size={13} aria-hidden="true" style={{ display: "inline", verticalAlign: "-2px" }} />{" "}
+                {formatSGD(r.resale_price_sgd / r.floor_area_sqm)} per sqm
+              </span>
             </div>
-          </header>
+          </>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }} aria-busy="true">
+            <Skeleton width="20%" />
+            <Skeleton width="55%" height={30} />
+            <Skeleton width="35%" />
+          </div>
+        )}
+      </div>
 
-          <section className="panel">
-            <h2>Transaction details</h2>
-            <dl className="detail-list">
-              <div>
-                <dt>Month registered</dt>
-                <dd>{formatMonth(selected_record.transaction_month)}</dd>
-              </div>
-              <div>
-                <dt>Town</dt>
-                <dd>{titleCase(selected_record.town)}</dd>
-              </div>
-              <div>
-                <dt>Flat type</dt>
-                <dd>{titleCase(selected_record.flat_type)}</dd>
-              </div>
-              <div>
-                <dt>Flat model</dt>
-                <dd>{selected_record.flat_model}</dd>
-              </div>
-              <div>
-                <dt>Storey range</dt>
-                <dd>{selected_record.storey_range.toLowerCase()}</dd>
-              </div>
-              <div>
-                <dt>Floor area</dt>
-                <dd>{formatArea(selected_record.floor_area_sqm)}</dd>
-              </div>
-              <div>
-                <dt>Lease commenced</dt>
-                <dd>{selected_record.lease_commence_date}</dd>
-              </div>
-              <div>
-                <dt>Remaining lease at sale</dt>
-                <dd>{formatLease(selected_record.remaining_lease_years)}</dd>
-              </div>
-              <div>
-                <dt>Price per sqm</dt>
-                <dd>{formatSGD(selected_record.resale_price_sgd / selected_record.floor_area_sqm)}</dd>
-              </div>
+      <div className="detail-layout">
+        <Card title="Transaction details" description="As registered with HDB">
+          {r ? (
+            <dl className="facts-grid">
+              {facts.map(({ icon: Icon, label, value }) => (
+                <div key={label}>
+                  <span className="fact-icon" aria-hidden="true">
+                    <Icon size={16} />
+                  </span>
+                  <div>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                </div>
+              ))}
             </dl>
-          </section>
-
-          <section className="panel">
-            <h2>Explore further</h2>
-            {criteria.town && <p className="muted">Using your search: {describeCriteria(criteria)}</p>}
-            <div className="action-grid">
-              <button type="button" className="button action" onClick={open_history}>
-                <strong>View historical data</strong>
-                <span>All matching sales since 2017</span>
-              </button>
-              <button type="button" className="button action" onClick={open_summary}>
-                <strong>View summary</strong>
-                <span>Mean, median and the price trend</span>
-              </button>
-              <button type="button" className="button action button-primary" onClick={open_prediction}>
-                <strong>View prediction</strong>
-                <span>Estimate a fair price for this flat</span>
-              </button>
+          ) : (
+            <div className="card-body" style={{ display: "grid", gap: 14 }}>
+              {Array.from({ length: 4 }, (_, i) => (
+                <Skeleton key={i} height={34} />
+              ))}
             </div>
-          </section>
-        </>
-      )}
+          )}
+        </Card>
+
+        <Card title="Explore further" description={`Using your search: ${describeCriteria(searchCriteria) || "–"}`}>
+          <div className="action-list">
+            <button type="button" className="action-card" onClick={open_history} disabled={!r}>
+              <span className="feature-icon" aria-hidden="true">
+                <History size={18} />
+              </span>
+              <span className="action-card-text">
+                <strong>View historical data</strong>
+                <span>Every matching sale since January 2017</span>
+              </span>
+              <ChevronRight size={18} className="chevron" aria-hidden="true" />
+            </button>
+            <button type="button" className="action-card" onClick={open_summary} disabled={!r}>
+              <span className="feature-icon" aria-hidden="true">
+                <BarChart3 size={18} />
+              </span>
+              <span className="action-card-text">
+                <strong>View summary</strong>
+                <span>Median, average and the price trend</span>
+              </span>
+              <ChevronRight size={18} className="chevron" aria-hidden="true" />
+            </button>
+            <button type="button" className="action-card action-card-primary" onClick={open_prediction} disabled={!r}>
+              <span className="feature-icon" aria-hidden="true">
+                <Calculator size={18} />
+              </span>
+              <span className="action-card-text">
+                <strong>View prediction</strong>
+                <span>Estimate this flat's fair price today</span>
+              </span>
+              <ChevronRight size={18} className="chevron" aria-hidden="true" />
+            </button>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

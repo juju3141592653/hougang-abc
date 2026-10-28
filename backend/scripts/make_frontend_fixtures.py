@@ -74,6 +74,7 @@ def main() -> None:
             "criteria": criteria,
             "filterOptionsAll": get("/api/filter-options"),
             "filterOptionsTown": get("/api/filter-options", town=town),
+            "filterOptionsTownType": get("/api/filter-options", town=town, flat_type="4 ROOM"),
             "latest": latest,
             "latestPage2": get("/api/transactions/latest", page=2, **criteria),
             "latestEmpty": get("/api/transactions/latest", town=town, floor_area_sqm=399),
@@ -98,6 +99,10 @@ def main() -> None:
             "loginFailed": client.post("/api/admin/login", json={"username": "admin", "password": "wrong"}).get_json(),
             "adminStatus": client.get("/api/admin/status", headers=headers).get_json(),
             "diagnostics": client.get("/api/admin/diagnostics", headers=headers).get_json(),
+            "datasetCheck": client.post(
+                "/api/admin/dataset/check", headers=headers, content_type="multipart/form-data",
+                data={"file": (io.BytesIO(SAMPLE.read_bytes()), "sample_resale.csv")},
+            ).get_json(),
             "uploadRejected": client.post(
                 "/api/admin/dataset", headers=headers, content_type="multipart/form-data",
                 data={"file": (io.BytesIO(bad_csv.encode()), "missing-price.csv")},

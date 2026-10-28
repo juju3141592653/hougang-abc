@@ -3,11 +3,14 @@
 SC2006 Software Engineering, Group 2. A web application for looking up Singapore HDB resale flat prices:
 
 - **Search** by town, flat type, storey range, flat model and floor area, and browse the latest sales.
-- **Explore** every matching transaction since 2017, with mean, median and a month-by-month price trend.
-- **Estimate** a flat's current fair price with an ordinary least squares (OLS) linear regression, and see
-  how each feature (town, flat type, storey, flat model, floor area, lease year) raises or lowers it.
-- **Administer** (login required): upload datasets, see dataset status and model diagnostics. A daily job
-  pulls new transactions from data.gov.sg.
+  Each choice narrows the next, so every combination offered has real sales behind it.
+- **Explore** every matching transaction since 2017, with the number of sales, mean, median, price per sqm
+  and a month-by-month price and sales-volume trend.
+- **Estimate** a flat's current fair price with an ordinary least squares (OLS) linear regression, with a
+  likely price range, and see how each feature (town, flat type, storey, flat model, floor area, lease
+  year) raises or lowers it.
+- **Administer** (login required): check and upload datasets, see dataset status and model diagnostics.
+  A daily job pulls new transactions from data.gov.sg.
 
 React frontend → Flask JSON API → Python control classes → repository / OLS model / data.gov.sg client →
 SQLite. Class, method and page names follow the team's design class diagram exactly (`docs/`).
@@ -83,24 +86,27 @@ The daily data.gov.sg update runs inside the server at 03:00 Singapore time. To 
 
 ## Log in as admin
 
-Open `/admin` (or the **Admin** link in the footer) and log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`
-from `.env`. From the dashboard you can:
+Open `/admin` (or **Administrator sign in** in the footer) and log in with `ADMIN_USERNAME` /
+`ADMIN_PASSWORD` from `.env`. From the admin pages you can:
 
-- see how many transactions are stored, the months covered, the last successful update, and any failed
-  updates or rejected rows that need attention;
-- **Manage dataset**: upload a `.csv` or `.xlsx` in the official data.gov.sg format (max 50 MB). Rows are
-  validated, duplicates are skipped, existing records are never changed, and the model is retrained when
-  new rows arrive;
-- **View diagnostics**: R², adjusted R², RMSE, and every coefficient with its p-value.
+- **Dashboard**: see how many transactions are stored, the months covered, the last data update, the
+  model's fit, every recent update, and any failed updates or rejected rows that need attention; run
+  the data.gov.sg update now;
+- **Dataset**: drop in a `.csv` or `.xlsx` in the official data.gov.sg format (max 50 MB). **Check file**
+  validates it without changing anything; **Upload** validates and imports it. Duplicates are skipped,
+  existing records are never changed, and the model is retrained when new rows arrive;
+- **Model diagnostics**: R², adjusted R², RMSE, the training window, and every coefficient with its p-value,
+  grouped by feature and searchable.
 
 Sessions end after 30 minutes without activity, on logout, or when the browser is closed. Admin pages
-redirect to the login page without a valid session, including when the URL is typed directly.
+redirect to the login page without a valid session, including when the URL is typed directly. After five
+wrong passwords in a row, login is locked for five minutes.
 
 ## Test
 
 ```bash
-cd backend && .venv/bin/python -m pytest       # 164 tests, about 20 s, no network needed
-cd frontend && npm test                        # 31 tests, about 3 s
+cd backend && .venv/bin/python -m pytest       # 177 tests, about 20 s, no network needed
+cd frontend && npm test                        # 39 tests, about 3 s
 ```
 
 - Backend tests are named after the use case they check, so `pytest -k uc45` runs everything for UC-4.5
@@ -138,8 +144,17 @@ category values (town, flat type, flat model or storey range), the app explains 
 data instead of giving a price. If the exact combination wasn't sold recently but each value is well
 supported, the app still gives a price, with a reliability warning. Both thresholds are configurable.
 
-**Latest vs historical.** "Latest" means the 12 most recent months of data, and "historical" means every
-month since January 2017.
+**How sure is the estimate?** Next to each estimate the app shows a likely range: the estimate plus or
+minus the model's typical error for flats at that price level (about ±S$47,000 for cheaper flats up to
+±S$124,000 for the most expensive). About two in three recent sales at that price level were within
+that distance of the model's estimate.
+
+**Latest vs historical.** "Latest" means the 12 most recent months of data (24 sales per page), and
+"historical" means every month since January 2017.
+
+**Getting around.** Historical data, the market summary and the price estimate can be opened for a whole
+search (from the results) or for one flat (from its details page). **Back** always returns to the page
+you came from.
 
 Design decisions where the diagrams and the SRS disagreed, or left gaps, are recorded with reasons in
 `docs/decisions.md`.
@@ -153,7 +168,7 @@ Design decisions where the diagrams and the SRS disagreed, or left gaps, are rec
 | `docs/design_reference.md` | Text transcription of the three diagrams |
 | `docs/decisions.md` | Rulings on conflicts and gaps, approved additions to the class diagram |
 | `docs/traceability.md` | Use case → classes → routes → pages → tests; NFR evidence |
-| `docs/screenshots/` | The running app, including error states and the phone layout |
+| `docs/screenshots/` | Every page of the running app, including error states, tablet and phone layouts |
 
 ## Troubleshooting
 

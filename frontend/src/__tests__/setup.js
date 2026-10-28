@@ -10,6 +10,10 @@ class ResizeObserverStub {
 }
 globalThis.ResizeObserver = globalThis.ResizeObserver || ResizeObserverStub;
 
+// The layout scrolls to the top on navigation; jsdom does not implement scrolling.
+window.scrollTo = () => {};
+Element.prototype.scrollIntoView = () => {};
+
 afterEach(() => {
   cleanup();
   window.sessionStorage.clear();

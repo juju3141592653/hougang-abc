@@ -9,7 +9,8 @@ export { fixtures };
 export const apiError = (recorded, status) => new ApiError(status, recorded.error);
 
 const defaults = {
-  filterOptions: (town) => (town ? fixtures.filterOptionsTown : fixtures.filterOptionsAll),
+  filterOptions: (town, flatType) =>
+    town && flatType ? fixtures.filterOptionsTownType : town ? fixtures.filterOptionsTown : fixtures.filterOptionsAll,
   latest: () => fixtures.latest,
   history: () => fixtures.history,
   transaction: () => fixtures.transaction,
@@ -21,6 +22,7 @@ const adminDefaults = {
   login: () => ({ session_id: "session-from-test", idle_timeout_minutes: 30 }),
   logout: () => ({ logged_out: true }),
   status: () => fixtures.adminStatus,
+  checkDataset: () => fixtures.datasetCheck,
   uploadDataset: () => fixtures.uploadSummary,
   updateFromApi: () => ({ source: "api", status: "success", rows_received: 0, rows_added: 0, rows_rejected: 0 }),
   diagnostics: () => fixtures.diagnostics,

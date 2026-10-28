@@ -1,5 +1,5 @@
 // Key admin flows (UC-4.8, UC-4.9, UC-4.10 manual check, UC-4.11; dialog map S7-S10, S9a, E3, E4).
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, api } from "../api/client.js";
@@ -43,7 +43,22 @@ describe("S7 Admin Authorization (UC-4.11)", () => {
     expect(screen.getByLabelText("Password")).toHaveValue("");
   });
 
-  it("successful login opens the S8 dashboard with the dataset status", async () => {
+  it("a locked account shows when login will be possible again (UC-4.11 step 6)", async () => {
+    const user = userEvent.setup();
+    api.admin.login.mockRejectedValueOnce(
+      new ApiError(401, {
+        code: "unauthorized",
+        message: "Too many failed attempts. Admin login is locked; try again in 5 minute(s).",
+        details: { reason: "locked", retry_after_minutes: 5 },
+      }),
+    );
+    renderApp("/admin/login");
+    await logIn(user);
+    expect(await screen.findByText("Login temporarily locked")).toBeInTheDocument();
+    expect(screen.getByText(/try again in 5 minute/)).toBeInTheDocument();
+  });
+
+  it("successful login opens the S8 dashboard with the dataset and model status", async () => {
     const user = userEvent.setup();
     renderApp("/admin/login");
     await logIn(user);
@@ -52,6 +67,7 @@ describe("S7 Admin Authorization (UC-4.11)", () => {
     expect((await screen.findByText("Transactions stored")).nextElementSibling).toHaveTextContent(
       fixtures.adminStatus.total_rows.toLocaleString("en-SG"),
     );
+    expect(await screen.findByText(fixtures.diagnostics.r_squared.toFixed(3))).toBeInTheDocument();
     expect(api.admin.status).toHaveBeenCalledWith("session-from-test");
   });
 
@@ -73,7 +89,7 @@ describe("S7 Admin Authorization (UC-4.11)", () => {
     renderApp("/admin");
     await user.click(await screen.findByRole("button", { name: "Log out" }));
     expect(api.admin.logout).toHaveBeenCalledWith("session-from-test");
-    expect(await screen.findByRole("heading", { name: /really selling for/ })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /really worth/ })).toBeInTheDocument();
     expect(window.sessionStorage.getItem(SESSION_KEY)).toBeNull();
   });
 
@@ -93,6 +109,17 @@ describe("S9 Dataset Management (UC-4.9)", () => {
     await user.upload(input, new File(["month,town\n"], name, { type: "text/csv" }));
   }
 
+  it("'Check file' validates without importing", async () => {
+    const user = userEvent.setup();
+    loggedIn();
+    renderApp("/admin/dataset");
+    await chooseFile(user);
+    await user.click(screen.getByRole("button", { name: "Check file" }));
+    expect(await screen.findByText("The file is valid and ready to import")).toBeInTheDocument();
+    expect(api.admin.checkDataset).toHaveBeenCalledWith("session-from-test", expect.any(File));
+    expect(api.admin.uploadDataset).not.toHaveBeenCalled();
+  });
+
   it("E4: a rejected upload lists the missing columns", async () => {
     const user = userEvent.setup();
     loggedIn();
@@ -100,8 +127,8 @@ describe("S9 Dataset Management (UC-4.9)", () => {
     renderApp("/admin/dataset");
     await chooseFile(user);
     await user.click(screen.getByRole("button", { name: "Upload" }));
-    expect(await screen.findByText("Upload rejected")).toBeInTheDocument();
-    expect(screen.getByText(fixtures.uploadRejected.error.details.missing_columns.join(", "))).toBeInTheDocument();
+    const alert = (await screen.findByText("Upload rejected")).closest(".alert");
+    expect(within(alert).getByText(fixtures.uploadRejected.error.details.missing_columns.join(", "))).toBeInTheDocument();
   });
 
   it("rejects a wrong file type before uploading", async () => {
@@ -120,7 +147,8 @@ describe("S9 Dataset Management (UC-4.9)", () => {
     renderApp("/admin/dataset");
     await chooseFile(user);
     await user.click(screen.getByRole("button", { name: "Upload" }));
-    expect(await screen.findByText("Import complete")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Import summary" })).toBeInTheDocument();
+    expect(screen.getByText("Import complete")).toBeInTheDocument();
     expect(api.admin.uploadDataset).toHaveBeenCalledWith("session-from-test", expect.any(File));
     expect(screen.getByText("Rows in file").nextElementSibling).toHaveTextContent(
       fixtures.uploadSummary.rows_received.toLocaleString("en-SG"),
@@ -131,14 +159,16 @@ describe("S9 Dataset Management (UC-4.9)", () => {
 });
 
 describe("S10 Model Diagnostics (UC-4.8)", () => {
-  it("shows R², adjusted R², RMSE and the coefficient table", async () => {
+  it("shows the fit statistics, training window and a coefficient table grouped by feature", async () => {
     loggedIn();
     renderApp("/admin/diagnostics");
     expect(await screen.findByText(fixtures.diagnostics.r_squared.toFixed(4))).toBeInTheDocument();
     expect(screen.getByText(fixtures.diagnostics.adjusted_r_squared.toFixed(4))).toBeInTheDocument();
-    const names = Object.keys(fixtures.diagnostics.coefficients);
-    expect(screen.getByText(names[1])).toBeInTheDocument();
-    expect(screen.getAllByRole("row")).toHaveLength(names.length + 1);
+    expect(screen.getByText(`${fixtures.diagnostics.n_observations.toLocaleString("en-SG")} sales`)).toBeInTheDocument();
+    expect(screen.getByText(/^Town \(compared with/)).toBeInTheDocument();
+    const coefficientRows = Object.keys(fixtures.diagnostics.coefficients).length;
+    const groupRows = 5; // intercept + numeric, town, flat type, storey range, flat model
+    expect(screen.getAllByRole("row")).toHaveLength(coefficientRows + groupRows + 1);
   });
 
   it("an unavailable model shows a message and Retry (EX.1)", async () => {

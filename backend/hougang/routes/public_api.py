@@ -64,8 +64,11 @@ def _page_from_args(args) -> int:
 
 @bp.get("/filter-options")
 def filter_options():
-    """UC-4.1: towns, and the flat types / storey ranges / flat models / floor areas in a town."""
-    options = _service("search_manager").get_filter_options(_text(request.args, "town") or "")
+    """UC-4.1: towns; within a town its flat types; within a town + flat type its storey ranges,
+    flat models and floor-area range."""
+    options = _service("search_manager").get_filter_options(
+        _text(request.args, "town") or "", _text(request.args, "flat_type")
+    )
     return jsonify({**options, "floor_area_tolerance_sqm": current_app.config["FLOOR_AREA_TOLERANCE_SQM"]})
 
 
@@ -104,6 +107,7 @@ def last_updated():
     status = _service("dataset_manager").get_status()
     return jsonify(
         {
+            "total_rows": status["total_rows"],
             "first_month": status["first_month"],
             "latest_month": status["latest_month"],
             "last_successful_update": status["last_successful_update"],

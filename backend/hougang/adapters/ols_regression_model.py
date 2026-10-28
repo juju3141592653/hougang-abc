@@ -47,6 +47,7 @@ FEATURE_LABELS = {
 }
 ARTEFACT_VERSION = 1
 MIN_TRAINING_ROWS = 200
+ERROR_BANDS = 10  # residual spread is measured separately for each tenth of the predicted-price range
 
 
 def _column(feature: str, level: str | None = None) -> str:
@@ -156,6 +157,14 @@ class OLSRegressionModel:
             entry["lease_max"] = max(entry["lease_max"], r.lease_commence_date)
 
         residuals = np.asarray(result.resid)
+        fitted = np.asarray(result.fittedvalues)
+        # Residuals grow with price, so one global RMSE overstates the error for cheap flats and
+        # understates it for expensive ones. Record the RMSE within each band of predicted price.
+        edges = np.quantile(fitted, np.linspace(0, 1, ERROR_BANDS + 1))
+        bands = []
+        for low, high in zip(edges[:-1], edges[1:]):
+            mask = (fitted >= low) & (fitted <= high)
+            bands.append({"upper": float(high), "rmse": float(math.sqrt(np.mean(residuals[mask] ** 2)))})
         state = {
             "version": ARTEFACT_VERSION,
             "fitted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -172,6 +181,7 @@ class OLSRegressionModel:
                 {_combination(r.town, r.flat_type, r.flat_model, r.storey_range) for r in rows}
             ),
             "ranges": ranges,
+            "error_bands": bands,
             "diagnostics": {
                 "r_squared": float(result.rsquared),
                 "adjusted_r_squared": float(result.rsquared_adj),
@@ -227,15 +237,36 @@ class OLSRegressionModel:
             and span["lease_min"] <= inputs.lease_commence_date <= span["lease_max"]
         )
 
+    def typical_error(self, estimate: float) -> float:
+        """Typical error (RMSE) of the model for flats predicted at about this price (decisions #29).
+
+        About two in three training sales at this price level were within this amount of the
+        model's estimate. Falls back to the overall RMSE for artefacts saved without bands.
+        """
+        state, _ = self._require_snapshot()
+        bands = state.get("error_bands")
+        if not bands:
+            return state["diagnostics"]["rmse_sgd"]
+        for band in bands:
+            if estimate <= band["upper"]:
+                return band["rmse"]
+        return bands[-1]["rmse"]
+
     def diagnostics(self) -> ModelDiagnostics:
-        """R², adjusted R², in-sample RMSE, coefficients and p-values (UC-4.8)."""
-        d = self._require_snapshot()[0]["diagnostics"]
+        """R², adjusted R², in-sample RMSE, coefficients and p-values, plus what the model was
+        trained on and when (UC-4.8)."""
+        state = self._require_snapshot()[0]
+        d, training = state["diagnostics"], state.get("training", {})
         return ModelDiagnostics(
             r_squared=d["r_squared"],
             adjusted_r_squared=d["adjusted_r_squared"],
             rmse_sgd=d["rmse_sgd"],
             coefficients=dict(d["coefficients"]),
             p_values=dict(d["p_values"]),
+            n_observations=training.get("rows", 0),
+            training_from=training.get("first_month"),
+            training_to=training.get("last_month"),
+            fitted_at=state.get("fitted_at"),
         )
 
     # ------------------------------------------------------------------ private helpers

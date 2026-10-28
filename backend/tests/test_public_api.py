@@ -102,3 +102,20 @@ def test_uc43_out_of_range_page_and_id(client, busy_town):
     page = client.get("/api/transactions/history", query_string={"town": busy_town, "page": 9223372036854775807})
     assert page.status_code == 400 and "page" in page.get_json()["error"]["fields"]
     assert client.get("/api/transactions/99999999999999999999").status_code == 404
+
+
+def test_uc41_filter_options_for_town_and_flat_type(client, busy_town):
+    body = client.get("/api/filter-options", query_string={"town": busy_town, "flat_type": "4 ROOM"}).get_json()
+    assert body["storey_ranges"] and body["flat_models"]
+    assert client.get("/api/filter-options", query_string={"town": busy_town, "flat_type": "9 ROOM"}).status_code == 400
+
+
+def test_uc410_last_updated_includes_row_count(client):
+    assert client.get("/api/last-updated").get_json()["total_rows"] == len(fixture_rows())
+
+
+def test_security_headers_are_set(client):
+    headers = client.get("/api/last-updated").headers
+    assert headers["X-Content-Type-Options"] == "nosniff"
+    assert headers["X-Frame-Options"] == "DENY"
+    assert "default-src 'self'" in headers["Content-Security-Policy"]

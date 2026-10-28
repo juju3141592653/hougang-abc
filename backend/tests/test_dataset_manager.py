@@ -131,3 +131,13 @@ def test_uc49_row_rules(manager, field, value):
     row = {**fixture_rows()[0], field: value}
     with pytest.raises(ValidationError):
         manager.validate_file(file_upload(rows_to_csv([row]), "resale.csv"))
+
+
+def test_uc49_check_file_validates_without_importing(manager, empty_services):
+    raw = [{**r, "notes": "x"} for r in fixture_rows()[:25]]
+    summary = manager.check_file(file_upload(rows_to_csv(raw), "resale.csv"))
+    assert summary["status"] == "valid" and summary["rows_received"] == 25
+    assert summary["ignored_columns"] == ["notes"]
+    assert summary["first_month"] <= summary["latest_month"]
+    assert empty_services["repository"].dataset_stats()["total_rows"] == 0
+    assert empty_services["repository"].get_update_history(5) == []

@@ -60,13 +60,21 @@ class SearchManager:
             raise NotFoundError("That transaction could not be found. It may have been selected from an old link.")
         return record
 
-    def get_filter_options(self, town: str) -> dict:
-        """Dropdown values (UC-4.1 steps 2-3). With a town, the dependent filters are narrowed to it."""
+    def get_filter_options(self, town: str, flat_type: str | None = None) -> dict:
+        """Dropdown values (UC-4.1 steps 2-5; SRS "options update based on the user's prior selections").
+
+        A town narrows the flat types; a town plus flat type also narrows the storey ranges, flat
+        models and floor-area range, so every combination offered has sales behind it (decisions #27).
+        """
         known = self._known_values()
+        errors = {}
         if town and town not in known["towns"]:
-            raise ValidationError("Please correct the highlighted filters.",
-                                  fields={"town": f"'{town}' is not an HDB town in the dataset."})
-        return self._repository.distinct_values(town or None)
+            errors["town"] = f"'{town}' is not an HDB town in the dataset."
+        if flat_type and flat_type not in known["flat_types"]:
+            errors["flat_type"] = f"'{flat_type}' is not a known flat type."
+        if errors:
+            raise ValidationError("Please correct the highlighted filters.", fields=errors)
+        return self._repository.distinct_values(town or None, flat_type if town else None)
 
     def latest(self, criteria: FilterCriteria, page: int) -> TransactionPage:
         """Most recent matching transactions, newest first (UC-4.2)."""
@@ -101,11 +109,14 @@ class SearchManager:
         by_month: dict[str, list[float]] = defaultdict(list)
         for r in rows:
             by_month[r.transaction_month].append(r.resale_price_sgd)
+        months_sorted = sorted(by_month)
         return SummaryStatistics(
             count=len(prices),
             mean_sgd=round(fmean(prices), 2),
             median_sgd=round(median(prices), 2),
-            trend={month: round(median(values), 2) for month, values in sorted(by_month.items())},
+            trend={month: round(median(by_month[month]), 2) for month in months_sorted},
+            volume={month: len(by_month[month]) for month in months_sorted},
+            median_psm_sgd=round(median(r.resale_price_sgd / r.floor_area_sqm for r in rows), 2),
         )
 
     # ------------------------------------------------------------------ private helpers

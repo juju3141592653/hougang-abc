@@ -30,7 +30,7 @@ def test_uc42_recent_query_is_latest_12_months_newest_first(repo, raw):
     page = repo.query(FilterCriteria(town=town), page=1, recent=True)
     expected = [r for r in raw if r["town"] == town and r["month"] >= cutoff]
     assert page.total == len(expected)
-    assert page.page == 1 and page.page_size == 20 and len(page.records) == 20
+    assert page.page == 1 and page.page_size == 24 and len(page.records) == 24
     months = [t.transaction_month for t in page.records]
     assert months == sorted(months, reverse=True)
     assert all(m >= cutoff for m in months)

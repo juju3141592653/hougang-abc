@@ -147,3 +147,27 @@ def test_fit_needs_enough_rows(training_rows, tmp_path):
 def test_reference_levels_are_the_most_common(fitted, training_rows):
     common_type = Counter(r.flat_type for r in training_rows).most_common(1)[0][0]
     assert all(f"(vs {common_type})" in n for n in fitted.diagnostics().coefficients if n.startswith("Flat type: "))
+
+
+def test_uc45_typical_error_grows_with_price_level(fitted, training_rows):
+    bands = fitted._snapshot[0]["error_bands"]
+    assert len(bands) == 10 and all(b["rmse"] > 0 for b in bands)
+    cheap, dear = bands[0]["upper"] * 0.9, bands[-1]["upper"]
+    assert fitted.typical_error(cheap) < fitted.typical_error(dear)
+    assert fitted.typical_error(10**9) == bands[-1]["rmse"]
+
+
+def test_uc45_typical_error_falls_back_to_overall_rmse_for_old_artefacts(fitted, tmp_path):
+    import json as _json
+    state = dict(fitted._snapshot[0]); state.pop("error_bands")
+    path = tmp_path / "old.json"; path.write_text(_json.dumps(state))
+    old = OLSRegressionModel(str(path)); old.load()
+    assert old.typical_error(500_000) == state["diagnostics"]["rmse_sgd"]
+
+
+def test_uc48_diagnostics_report_the_training_window(fitted, training_rows):
+    d = fitted.diagnostics()
+    assert d.n_observations == len(training_rows)
+    assert d.training_from == min(r.transaction_month for r in training_rows)
+    assert d.training_to == max(r.transaction_month for r in training_rows)
+    assert d.fitted_at

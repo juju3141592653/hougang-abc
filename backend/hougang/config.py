@@ -47,7 +47,7 @@ def load_config(overrides: dict | None = None) -> dict:
         "API_TIMEOUT_SECONDS": _env_int("API_TIMEOUT_SECONDS", 10),
         "FETCH_LOOKBACK_MONTHS": _env_int("FETCH_LOOKBACK_MONTHS", 3),
         # Search (UC-4.1 to UC-4.4)
-        "PAGE_SIZE": _env_int("PAGE_SIZE", 20),
+        "PAGE_SIZE": _env_int("PAGE_SIZE", 24),
         "RECENT_MONTHS": _env_int("RECENT_MONTHS", 12),
         "FLOOR_AREA_TOLERANCE_SQM": _env_float("FLOOR_AREA_TOLERANCE_SQM", 5.0),
         # Prediction (UC-4.5 to UC-4.7, TBD-07)

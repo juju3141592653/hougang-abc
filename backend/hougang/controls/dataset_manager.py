@@ -88,6 +88,25 @@ class DatasetManager:
             raise ValueError(f"remaining_lease {value!r} is outside 0-99 years")
         return round(years, 4)
 
+    def check_file(self, file) -> dict:
+        """Validate a file without importing it (UC-4.9 "check", decisions #33).
+
+        Returns what an import would read: row count, months covered, accepted and ignored columns.
+        Raises ValidationError (E4) exactly as an import would. Nothing is stored or recorded.
+        """
+        filename = PurePath(getattr(file, "filename", "") or "").name
+        rows, accepted, ignored = self._read_and_validate(file)
+        months = sorted({r.transaction_month for r in rows})
+        return {
+            "status": "valid",
+            "filename": filename,
+            "rows_received": len(rows),
+            "accepted_columns": accepted,
+            "ignored_columns": ignored,
+            "first_month": months[0],
+            "latest_month": months[-1],
+        }
+
     def import_file(self, file) -> dict:
         """Validate a file and append its new rows (UC-4.9). Returns the import summary shown on S9a."""
         filename = PurePath(getattr(file, "filename", "") or "").name

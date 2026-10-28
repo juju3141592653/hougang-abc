@@ -53,9 +53,16 @@ export function criteriaParams(criteria = {}) {
   return { town, flat_type, storey_range, floor_area_sqm, flat_model };
 }
 
+function fileForm(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return formData;
+}
+
 export const api = {
   // Public API (UC-4.1 to UC-4.6, UC-4.10 "last updated")
-  filterOptions: (town = "") => request("/filter-options", { query: { town } }),
+  // Town narrows the flat types; town + flat type also narrow storeys, models and floor area.
+  filterOptions: (town = "", flatType = "") => request("/filter-options", { query: { town, flat_type: flatType } }),
   latest: (criteria, page = 1) => request("/transactions/latest", { query: { ...criteriaParams(criteria), page } }),
   history: (criteria, page = 1) => request("/transactions/history", { query: { ...criteriaParams(criteria), page } }),
   transaction: (id) => request(`/transactions/${id}`),
@@ -68,11 +75,8 @@ export const api = {
     login: (username, password) => request("/admin/login", { method: "POST", json: { username, password } }),
     logout: (token) => request("/admin/logout", { method: "POST", token }),
     status: (token) => request("/admin/status", { token }),
-    uploadDataset: (token, file) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      return request("/admin/dataset", { method: "POST", formData, token });
-    },
+    checkDataset: (token, file) => request("/admin/dataset/check", { method: "POST", formData: fileForm(file), token }),
+    uploadDataset: (token, file) => request("/admin/dataset", { method: "POST", formData: fileForm(file), token }),
     updateFromApi: (token) => request("/admin/update-from-api", { method: "POST", token }),
     diagnostics: (token) => request("/admin/diagnostics", { token }),
   },

@@ -20,6 +20,8 @@ from hougang.errors import AuthError, ValidationError
 
 # Checked when no admin password is configured, so a failed login takes the same time either way.
 _DUMMY_HASH = generate_password_hash(secrets.token_hex(16))
+MAX_FAILED_LOGINS = 5
+LOCKOUT_MINUTES = 5
 
 
 class AdminAuthService:
@@ -39,12 +41,15 @@ class AdminAuthService:
         self._idle = timedelta(minutes=idle_minutes)
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._lock = threading.Lock()
+        self._failed_logins = 0
+        self._locked_until: datetime | None = None
 
     def login(self, username: str, password: str) -> str:
         """Verify the credentials and start a session; return its id (UC-4.11 steps 4-7).
 
         Raises ValidationError if a field is empty (EX2) and AuthError with a generic message that
-        does not say which field was wrong (EX1, SRS 4.11.3.3).
+        does not say which field was wrong (EX1, SRS 4.11.3.3). After MAX_FAILED_LOGINS failures in a
+        row the account is locked for LOCKOUT_MINUTES (UC-4.11 step 6, decisions #32).
         """
         missing = {}
         if not (username or "").strip():
@@ -53,13 +58,27 @@ class AdminAuthService:
             missing["password"] = "Enter your password."
         if missing:
             raise ValidationError("Please enter both your username and password.", fields=missing)
+        now = self._clock()
+        with self._lock:
+            if self._locked_until and now < self._locked_until:
+                wait = max(1, round((self._locked_until - now).total_seconds() / 60))
+                raise AuthError(
+                    f"Too many failed attempts. Admin login is locked; try again in {wait} minute(s).",
+                    details={"reason": "locked", "retry_after_minutes": wait},
+                )
         password_ok = check_password_hash(self._password_hash or _DUMMY_HASH, password)
         username_ok = hmac.compare_digest(username.strip().encode(), self._username.encode())
         if not (self._password_hash and password_ok and username_ok):
+            with self._lock:
+                self._failed_logins += 1
+                if self._failed_logins >= MAX_FAILED_LOGINS:
+                    self._failed_logins = 0
+                    self._locked_until = now + timedelta(minutes=LOCKOUT_MINUTES)
             raise AuthError("Invalid username or password.")
         session_id = secrets.token_urlsafe(32)
-        now = self._clock()
         with self._lock:
+            self._failed_logins = 0
+            self._locked_until = None
             self._sessions = {sid: seen for sid, seen in self._sessions.items() if now - seen <= self._idle}
             self._sessions[session_id] = now
         return session_id

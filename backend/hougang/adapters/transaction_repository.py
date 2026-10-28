@@ -84,7 +84,7 @@ class TransactionRepository:
     def __init__(
         self,
         db_path: str,
-        page_size: int = 20,
+        page_size: int = 24,
         recent_months: int = 12,
         floor_area_tolerance_sqm: float = 5.0,
         training_window_months: int = 24,
@@ -173,31 +173,35 @@ class TransactionRepository:
             ).fetchall()
         return [self._to_transaction(r) for r in rows]
 
-    def distinct_values(self, town: str | None) -> dict:
-        """Values available for each filter, overall or within one town (UC-4.1 step 3, decisions #24).
+    def distinct_values(self, town: str | None, flat_type: str | None = None) -> dict:
+        """Values available for each filter: overall, within a town, or within a town and flat type
+        (UC-4.1 steps 3-5, decisions #24, #27). Flat types are always listed for the whole town.
 
-        Cached per town; the cache key includes the newest row id, so appends (from any process)
-        invalidate it.
+        Cached per (town, flat type); the cache key includes the newest row id, so appends (from any
+        process) invalidate it.
         """
         where, params = ("WHERE town = ?", [town]) if town else ("", [])
+        narrow_where, narrow_params = where, params
+        if town and flat_type:
+            narrow_where, narrow_params = "WHERE town = ? AND flat_type = ?", [town, flat_type]
         with closing(self._connect()) as conn:
             newest_id = conn.execute("SELECT MAX(id) FROM transactions").fetchone()[0]
-            key = (town or "", newest_id)
+            key = (town or "", flat_type if town else "", newest_id)
             if key in self._distinct_cache:
                 return copy.deepcopy(self._distinct_cache[key])
 
-            def distinct(column: str) -> list[str]:
-                return [r[0] for r in conn.execute(f"SELECT DISTINCT {column} FROM transactions {where}", params)]
+            def distinct(column: str, clause: str, args: list) -> list[str]:
+                return [r[0] for r in conn.execute(f"SELECT DISTINCT {column} FROM transactions {clause}", args)]
 
             towns = sorted(r[0] for r in conn.execute("SELECT DISTINCT town FROM transactions"))
             area = conn.execute(
-                f"SELECT MIN(floor_area_sqm), MAX(floor_area_sqm) FROM transactions {where}", params
+                f"SELECT MIN(floor_area_sqm), MAX(floor_area_sqm) FROM transactions {narrow_where}", narrow_params
             ).fetchone()
             values = {
                 "towns": towns,
-                "flat_types": sorted(distinct("flat_type")),
-                "storey_ranges": sorted(distinct("storey_range"), key=_storey_sort_key),
-                "flat_models": sorted(distinct("flat_model")),
+                "flat_types": sorted(distinct("flat_type", where, params)),
+                "storey_ranges": sorted(distinct("storey_range", narrow_where, narrow_params), key=_storey_sort_key),
+                "flat_models": sorted(distinct("flat_model", narrow_where, narrow_params)),
                 "floor_area_min": area[0],
                 "floor_area_max": area[1],
             }

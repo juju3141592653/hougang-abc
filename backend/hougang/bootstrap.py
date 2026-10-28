@@ -53,6 +53,7 @@ class AppBootstrap:
         app.register_blueprint(public_api.bp)
         app.register_blueprint(admin_api.bp)
         register_error_handlers(app, self._config["MAX_UPLOAD_MB"])
+        app.after_request(_security_headers)
         self.load_model()
         if self._config["SCHEDULER_ENABLED"]:
             self.configure_daily_job()
@@ -183,5 +184,23 @@ class AppBootstrap:
                 if safe is None:
                     abort(404)
                 if Path(safe).is_file():
-                    return send_from_directory(dist, path)
-            return send_from_directory(dist, "index.html")
+                    # Vite puts a content hash in asset names, so they can be cached for a year.
+                    max_age = 31536000 if path.startswith("assets/") else 0
+                    return send_from_directory(dist, path, max_age=max_age)
+            response = send_from_directory(dist, "index.html", max_age=0)
+            response.headers["Cache-Control"] = "no-cache"
+            return response
+
+
+def _security_headers(response):
+    """Baseline browser protections for the API and the built frontend."""
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "font-src 'self' data:; connect-src 'self'; frame-src https://www.openstreetmap.org; "
+        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    )
+    return response

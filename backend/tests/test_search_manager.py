@@ -130,3 +130,27 @@ def test_uc44_invalid_period(search, busy_town):
     with pytest.raises(ValidationError) as caught:
         search.summary(FilterCriteria(town=busy_town), "10y")
     assert "period" in caught.value.fields
+
+
+def test_uc41_options_narrow_by_town_and_flat_type(search, raw, busy_town):
+    """SRS 4.1 special requirement: options update based on the user's prior selections."""
+    flat_type = Counter(r["flat_type"] for r in raw if r["town"] == busy_town).most_common(1)[0][0]
+    narrowed = search.get_filter_options(busy_town, flat_type)
+    rows = [r for r in raw if r["town"] == busy_town and r["flat_type"] == flat_type]
+    assert set(narrowed["storey_ranges"]) == {r["storey_range"] for r in rows}
+    assert set(narrowed["flat_models"]) == {r["flat_model"] for r in rows}
+    assert narrowed["floor_area_min"] == min(float(r["floor_area_sqm"]) for r in rows)
+    # Flat types stay the whole town's list so the user can switch type.
+    assert set(narrowed["flat_types"]) == {r["flat_type"] for r in raw if r["town"] == busy_town}
+    with pytest.raises(ValidationError) as caught:
+        search.get_filter_options(busy_town, "9 ROOM")
+    assert "flat_type" in caught.value.fields
+
+
+def test_uc44_summary_reports_volume_and_price_per_sqm(search, raw, busy_town):
+    rows = [r for r in raw if r["town"] == busy_town]
+    stats = search.summary(FilterCriteria(town=busy_town), "all")
+    assert sum(stats.volume.values()) == stats.count == len(rows)
+    assert list(stats.volume) == list(stats.trend)
+    assert stats.median_psm_sgd == pytest.approx(
+        median(float(r["resale_price"]) / float(r["floor_area_sqm"]) for r in rows), abs=0.01)

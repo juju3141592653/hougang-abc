@@ -90,6 +90,16 @@ def upload_dataset():
     return jsonify(_retrain_after(summary))
 
 
+@bp.post("/dataset/check")
+@admin_required
+def check_dataset():
+    """UC-4.9 "check": validate an uploaded file without importing it (S9; E4 on failure)."""
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        raise ValidationError("Choose a .csv or .xlsx file to check.", fields={"file": "No file chosen"})
+    return jsonify(_service("dataset_manager").check_file(file))
+
+
 @bp.post("/update-from-api")
 @admin_required
 def update_from_api():
